@@ -1,0 +1,13 @@
+{
+  "name": "importmap-rollup-plugin",
+  "version": "1.0.0",
+  "description": "ImportmapPlugin",
+  "main": "plugin.js",
+  "scripts": {
+    "build": "rollup -c"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module"
+}
