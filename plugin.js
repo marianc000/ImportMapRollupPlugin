@@ -1,72 +1,41 @@
 const path = require('path');
-const { readFileSync } = require('fs');
 
 const workingDir = process.cwd();
 
 function toAbsolutePath(relativePath) {
     return path.resolve(workingDir, relativePath);
 }
- 
-function ImportmapPlugin({ imports } = { imports: [] }) {
-    let cache;
 
-    console.log("XXX esmImportToUrl", workingDir, imports);
+function ImportmapPlugin({ imports }) {
+
+    const moduleMap = {};
+    const packageMap = {};
+
+    Object.entries(imports).forEach(([key, path]) => {
+        if (key.endsWith('/')) moduleMap[key] = path;
+        else packageMap[key] = path;
+    });
+
     return {
         name: 'rollup-plugin-importmap',
 
         async buildStart(options) {
-            console.log(">buildStart found imports:", imports);
-            cache = new Map(Object.entries(imports));
-            console.log("cache", cache);
+            console.log("using imports:", imports);
+            console.log("moduleMap:", moduleMap);
+            console.log("packageMap:", packageMap);
         },
 
         resolveId(source, importer) {
             // console.log("XXX resolveId", source, importer);
-            const url = cache.get(source);
-            if (url) {
-                return toAbsolutePath(url);
-            } else {
-                const entry = Array.from(cache).find(([key, val]) => source.startsWith(key)
-                    && source.length > key.length);
-                if (entry) {
-                    const [key, val] = entry;
-                    const r = toAbsolutePath(source.replace(key, val));
-                    //  console.log("found", key, val, source, '=>', r);
-                    return r;
-                }
-            }
-            return null;
-        },
+            const path = moduleMap[source];
+            if (path) return  toAbsolutePath(path);
 
-        // load (id){
-        //     if (id.includes('dataHolder'))
-        //      console.log("---------------------",id);
-        //    // else console.log("---",id);
-        //     return null;
-        // },
+            const key = Object.keys(imports).find(key => source.startsWith(key));
+            if (key)
+                return  toAbsolutePath(source.replace(key, imports[key]));
 
-        resolveImportMeta(property, obj) {
-
-            // console.log("XXX resolveImportMeta",property, obj,normalizePath(athN.relative(workingDir, obj.moduleId)));
-            return null;
-        },
-
-        transform(code, id) {
-            const re = /await +loadHTML\('([^,]+)',/g;
-            const reSpacesBetweenTags = />[ \n]+</g;
-            const reComments = /<!--.*?-->/sg;
-
-            function replacer(match, relativeUrl) {
-                const filePath = path.resolve(path.dirname(id), relativeUrl);
-                let html = readFileSync(filePath, { encoding: 'utf8' });
-                html = html.replace(reSpacesBetweenTags, '><').replace(reComments, '');
-                
-                return JSON.stringify(html) + "; //";
-            }
-
-            return code.replace(re, replacer);
+            return null; 
         }
-
     };
 }
 
