@@ -26,7 +26,6 @@ function ImportmapPlugin({ imports }) {
         },
 
         resolveId(source, importer) {
-            // console.log("XXX resolveId", source, importer);
             const path = moduleMap[source];
             if (path) return  toAbsolutePath(path);
 
